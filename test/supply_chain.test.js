@@ -1,3 +1,10 @@
+/*
+This test file has been updated for Truffle version 5.0. If your tests are failing, make sure that you are
+using Truffle version 5.0. You can check this by running "trufffle version"  in the terminal. If version 5 is not
+installed, you can uninstall the existing version with `npm uninstall -g truffle` and install the latest version (5.0)
+with `npm install -g truffle`.
+*/
+
 var SupplyChain = artifacts.require('SupplyChain')
 
 contract('SupplyChain', function(accounts) {
@@ -8,25 +15,19 @@ contract('SupplyChain', function(accounts) {
     const emptyAddress = '0x0000000000000000000000000000000000000000'
 
     var sku
-    const price = web3.toWei(1, "ether")
+    const price = "1000"
 
     it("should add an item with the provided name and price", async() => {
         const supplyChain = await SupplyChain.deployed()
 
         var eventEmitted = false
-/* Unused because it doesn't work on Travis as expected
-        var event = supplyChain.ForSale()
-        await event.watch((err, res) => {
-            sku = res.args.sku.toString(10)
-            eventEmitted = true
-        })
-*/
+
         const name = "book"
-	const tx = await supplyChain.addItem(name, price, {from: alice})
-	if (tx.logs[0].event === "ForSale") {
-		sku = tx.logs[0].args.sku.toString(10)
-		eventEmitted = true
-	}
+        const tx = await supplyChain.addItem(name, price, {from: alice})
+        if (tx.logs[0].event === "ForSale") {
+          sku = tx.logs[0].args.sku.toString(10)
+          eventEmitted = true
+        }
 
         const result = await supplyChain.fetchItem.call(sku)
 
@@ -42,52 +43,40 @@ contract('SupplyChain', function(accounts) {
         const supplyChain = await SupplyChain.deployed()
 
         var eventEmitted = false
-/* Unused because it doesn't work on Travis as expected
-        var event = supplyChain.Sold()
-        await event.watch((err, res) => {
-            sku = res.args.sku.toString(10)
-            eventEmitted = true
-        })
-*/
-        const amount = web3.toWei(2, "ether")
 
-        var aliceBalanceBefore = await web3.eth.getBalance(alice).toNumber()
-        var bobBalanceBefore = await web3.eth.getBalance(bob).toNumber()
+        const amount = "2000"
+
+        var aliceBalanceBefore = await web3.eth.getBalance(alice)
+        var bobBalanceBefore = await web3.eth.getBalance(bob)
 
         const tx = await supplyChain.buyItem(sku, {from: bob, value: amount})
-	if (tx.logs[0].event === "Sold") {
-		sku = tx.logs[0].args.sku.toString(10)
-		eventEmitted = true
-	}
+        if (tx.logs[0].event === "Sold") {
+          sku = tx.logs[0].args.sku.toString(10)
+          eventEmitted = true
+        }
 
-        var aliceBalanceAfter = await web3.eth.getBalance(alice).toNumber()
-        var bobBalanceAfter = await web3.eth.getBalance(bob).toNumber()
+        var aliceBalanceAfter = await web3.eth.getBalance(alice)
+        var bobBalanceAfter = await web3.eth.getBalance(bob)
 
         const result = await supplyChain.fetchItem.call(sku)
 
         assert.equal(result[3].toString(10), 1, 'the state of the item should be "Sold", which should be declared second in the State Enum')
         assert.equal(result[5], bob, 'the buyer address should be set bob when he purchases an item')
         assert.equal(eventEmitted, true, 'adding an item should emit a Sold event')
-        assert.equal(aliceBalanceAfter, aliceBalanceBefore + parseInt(price, 10), "alice's balance should be increased by the price of the item")
-        assert.isBelow(bobBalanceAfter, bobBalanceBefore - price, "bob's balance should be reduced by more than the price of the item (including gas costs)")
+        assert.equal(parseInt(aliceBalanceAfter), parseInt(aliceBalanceBefore, 10) + parseInt(price, 10), "alice's balance should be increased by the price of the item")
+        assert.isBelow(parseInt(bobBalanceAfter), parseInt(bobBalanceBefore, 10) - parseInt(price, 10), "bob's balance should be reduced by more than the price of the item (including gas costs)")
     })
 
     it("should allow the seller to mark the item as shipped", async() => {
         const supplyChain = await SupplyChain.deployed()
 
         var eventEmitted = false
-/* Unused because it doesn't work on Travis as expected
-        var event = supplyChain.Shipped()
-        await event.watch((err, res) => {
-            sku = res.args.sku.toString(10)
-            eventEmitted = true
-        })
-*/
+
         const tx = await supplyChain.shipItem(sku, {from: alice})
-	if (tx.logs[0].event === "Shipped") {
-		sku = tx.logs[0].args.sku.toString(10)
-		eventEmitted = true
-	}
+        if (tx.logs[0].event === "Shipped") {
+          sku = tx.logs[0].args.sku.toString(10)
+          eventEmitted = true
+        }
 
         const result = await supplyChain.fetchItem.call(sku)
 
@@ -99,23 +88,16 @@ contract('SupplyChain', function(accounts) {
         const supplyChain = await SupplyChain.deployed()
 
         var eventEmitted = false
-/* Unused because it doesn't work on Travis as expected
-        var event = supplyChain.Received()
-        await event.watch((err, res) => {
-            sku = res.args.sku.toString(10)
-            eventEmitted = true
-        })
-*/
+
         const tx = await supplyChain.receiveItem(sku, {from: bob})
-	if (tx.logs[0].event === "Received") {
-		sku = tx.logs[0].args.sku.toString(10)
-		eventEmitted = true
-	}
+  if (tx.logs[0].event === "Received") {
+    sku = tx.logs[0].args.sku.toString(10)
+    eventEmitted = true
+  }
 
         const result = await supplyChain.fetchItem.call(sku)
 
         assert.equal(eventEmitted, true, 'adding an item should emit a Shipped event')
         assert.equal(result[3].toString(10), 3, 'the state of the item should be "Received", which should be declared fourth in the State Enum')
     })
-
 });
